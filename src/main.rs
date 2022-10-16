@@ -1,4 +1,5 @@
-//! A simple example of parsing `.debug_info`.
+//! DWARF debug info traversal skeleton, based on a simple Gimli
+//! example.
 
 #![warn(rust_2018_idioms)]
 #![warn(clippy::pedantic)]
@@ -7,40 +8,36 @@ use gimli::read::{AttributeValue, EvaluationResult};
 use object::{Object, ObjectSection};
 use std::fs::File;
 use std::io::Write;
+use std::path::{Path, PathBuf};
 use std::{borrow, env, error, fs};
 
-use clap::{crate_name, crate_version, Arg, Command};
+use clap::{crate_name, crate_version, value_parser, Arg, Command};
 
 fn main() -> Result<(), Box<dyn error::Error>> {
     let matches = Command::new(crate_name!())
         .version(crate_version!())
-        .arg(Arg::new("pe").num_args(1))
+        .arg(
+            Arg::new("binary")
+                .index(1)
+                .required(true)
+                .value_parser(value_parser!(PathBuf)),
+        )
         .get_matches();
 
-    if !matches.contains_id("pe") {
-        for path in env::args().skip(1) {
-            let file = fs::File::open(&path)?;
-            let mmap = unsafe { memmap2::Mmap::map(&file)? };
-            let object = object::File::parse(&*mmap)?;
-            let endian = if object.is_little_endian() {
-                gimli::RunTimeEndian::Little
-            } else {
-                gimli::RunTimeEndian::Big
-            };
-            dump_file(&object, endian)?;
-        }
-    } else if let Some(value) = matches.get_one::<String>("pe") {
-        let file = fs::File::open(&value)?;
-        let mmap = unsafe { memmap2::Mmap::map(&file)? };
-        let object = object::File::parse(&*mmap)?;
-        println!("{:?}", object.format());
-        let endian = if object.is_little_endian() {
-            gimli::RunTimeEndian::Little
-        } else {
-            gimli::RunTimeEndian::Big
-        };
-        dump_file(&object, endian)?;
-    }
+    let path = matches
+        .get_one::<&Path>("binary")
+        .expect("path to binary file");
+
+    let file = fs::File::open(&path)?;
+    let mmap = unsafe { memmap2::Mmap::map(&file)? };
+    let object = object::File::parse(&*mmap)?;
+    println!("{:?}", object.format());
+    let endian = if object.is_little_endian() {
+        gimli::RunTimeEndian::Little
+    } else {
+        gimli::RunTimeEndian::Big
+    };
+    dump_file(&object, endian)?;
 
     Ok(())
 }
