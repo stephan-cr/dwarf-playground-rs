@@ -36,19 +36,17 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             };
             dump_file(&object, endian)?;
         }
-    } else {
-        if let Some(ref value) = matches.value_of("pe") {
-            let file = fs::File::open(&value)?;
-            let mmap = unsafe { memmap::Mmap::map(&file)? };
-            let object = object::File::parse(&*mmap)?;
-            println!("{:?}", object.format());
-            let endian = if object.is_little_endian() {
-                gimli::RunTimeEndian::Little
-            } else {
-                gimli::RunTimeEndian::Big
-            };
-            dump_file(&object, endian)?;
-        }
+    } else if let Some(value) = matches.value_of("pe") {
+        let file = fs::File::open(&value)?;
+        let mmap = unsafe { memmap::Mmap::map(&file)? };
+        let object = object::File::parse(&*mmap)?;
+        println!("{:?}", object.format());
+        let endian = if object.is_little_endian() {
+            gimli::RunTimeEndian::Little
+        } else {
+            gimli::RunTimeEndian::Big
+        };
+        dump_file(&object, endian)?;
     }
 
     Ok(())
@@ -72,7 +70,7 @@ fn dump_file(object: &object::File<'_>, endian: gimli::RunTimeEndian) -> Result<
     let borrow_section: &dyn for<'a> Fn(
         &'a borrow::Cow<'_, [u8]>,
     ) -> gimli::EndianSlice<'a, gimli::RunTimeEndian> =
-        &|section| gimli::EndianSlice::new(&*section, endian);
+        &|section| gimli::EndianSlice::new(section, endian);
 
     // Create `EndianSlice`s for all of the sections.
     let dwarf = dwarf_cow.borrow(&borrow_section);
@@ -105,7 +103,7 @@ fn dump_file(object: &object::File<'_>, endian: gimli::RunTimeEndian) -> Result<
                         println!(
                             "offset = {} {:?}",
                             offset.0,
-                            dwarf.string(offset)?.escape_ascii().to_string()
+                            dwarf.string(offset)?.escape_ascii()
                         );
                     }
                     AttributeValue::Exprloc(expr) => {
@@ -116,7 +114,7 @@ fn dump_file(object: &object::File<'_>, endian: gimli::RunTimeEndian) -> Result<
                                 dbg!(eval.resume_with_relocated_address(addr)?);
                                 eval.result()
                             }
-                            otherwise => vec![],
+                            _otherwise => vec![],
                         };
                         println!("{:?}", result);
                     }
