@@ -7,22 +7,15 @@ use gimli::read::{AttributeValue, EvaluationResult};
 use object::{Object, ObjectSection};
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
 use std::{borrow, env, error, fs};
 
-use clap::{crate_name, Arg, Command};
+use clap::{crate_name, crate_version, Arg, Command};
 
 fn main() -> Result<(), Box<dyn error::Error>> {
-    let matches = Command::new(
-        Path::new(crate_name!())
-            .file_name()
-            .unwrap()
-            .to_str()
-            .unwrap(),
-    )
-    .version("0.1.0")
-    .arg(Arg::new("pe").num_args(1))
-    .get_matches();
+    let matches = Command::new(crate_name!())
+        .version(crate_version!())
+        .arg(Arg::new("pe").num_args(1))
+        .get_matches();
 
     if !matches.contains_id("pe") {
         for path in env::args().skip(1) {
