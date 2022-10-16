@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     if !matches.contains_id("pe") {
         for path in env::args().skip(1) {
             let file = fs::File::open(&path)?;
-            let mmap = unsafe { memmap::Mmap::map(&file)? };
+            let mmap = unsafe { memmap2::Mmap::map(&file)? };
             let object = object::File::parse(&*mmap)?;
             let endian = if object.is_little_endian() {
                 gimli::RunTimeEndian::Little
@@ -38,7 +38,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         }
     } else if let Some(value) = matches.get_one::<String>("pe") {
         let file = fs::File::open(&value)?;
-        let mmap = unsafe { memmap::Mmap::map(&file)? };
+        let mmap = unsafe { memmap2::Mmap::map(&file)? };
         let object = object::File::parse(&*mmap)?;
         println!("{:?}", object.format());
         let endian = if object.is_little_endian() {
