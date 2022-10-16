@@ -10,21 +10,21 @@ use std::io::Write;
 use std::path::Path;
 use std::{borrow, env, error, fs};
 
-use clap::{Arg, Command};
+use clap::{crate_name, Arg, Command};
 
 fn main() -> Result<(), Box<dyn error::Error>> {
     let matches = Command::new(
-        Path::new(&env::args().next().unwrap())
+        Path::new(crate_name!())
             .file_name()
             .unwrap()
             .to_str()
             .unwrap(),
     )
     .version("0.1.0")
-    .arg(Arg::new("pe").takes_value(true))
+    .arg(Arg::new("pe").num_args(1))
     .get_matches();
 
-    if !matches.is_present("pe") {
+    if !matches.contains_id("pe") {
         for path in env::args().skip(1) {
             let file = fs::File::open(&path)?;
             let mmap = unsafe { memmap::Mmap::map(&file)? };
@@ -36,7 +36,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             };
             dump_file(&object, endian)?;
         }
-    } else if let Some(value) = matches.value_of("pe") {
+    } else if let Some(value) = matches.get_one::<String>("pe") {
         let file = fs::File::open(&value)?;
         let mmap = unsafe { memmap::Mmap::map(&file)? };
         let object = object::File::parse(&*mmap)?;
