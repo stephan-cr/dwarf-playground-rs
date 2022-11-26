@@ -8,7 +8,7 @@ use gimli::read::{AttributeValue, EvaluationResult};
 use object::{Object, ObjectSection};
 use std::fs::File;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::{borrow, env, error, fs};
 
 use clap::{crate_name, crate_version, value_parser, Arg, Command};
@@ -25,10 +25,10 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         .get_matches();
 
     let path = matches
-        .get_one::<&Path>("binary")
+        .get_one::<PathBuf>("binary")
         .expect("path to binary file");
 
-    let file = fs::File::open(&path)?;
+    let file = fs::File::open(path)?;
     let mmap = unsafe { memmap2::Mmap::map(&file)? };
     let object = object::File::parse(&*mmap)?;
     println!("{:?}", object.format());
